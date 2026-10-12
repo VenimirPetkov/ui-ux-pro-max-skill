@@ -3,6 +3,8 @@
 Thumbs.db
 
 # Python
+.coverage
+.coverage.*
 __pycache__/
 *.py[cod]
 *.pyo
