@@ -24,14 +24,14 @@ Design social media images via HTML/CSS rendering + screenshot export. Orchestra
 
 ### Step 1: Plan the Work
 
-Create TODO tasks with the runtime's native task list. Break down into:
+Use the runtime's task list when available, otherwise keep a short checklist. Break down into:
 - Requirement analysis task
 - Idea generation task(s)
 - HTML design task(s) — can parallelize per size/variant
 - Screenshot export task(s) — can parallelize per file
 - Report generation task
 
-Spawn parallel subagents for independent tasks (e.g., multiple HTML files for different sizes).
+When subagents are available and delegation is authorized, independent tasks such as different image sizes may run in parallel. Otherwise complete them sequentially.
 
 ### Step 2: Analyze Requirements
 
@@ -51,7 +51,7 @@ Create 3-5 concept ideas that:
 - Vary in composition, color, typography approach
 - Align with brand guidelines if available
 
-Present ideas to user via `AskUserQuestion` for approval before designing.
+Present ideas to user using the runtime's user-question tool or chat for approval before designing.
 
 ### Step 4: Design HTML Files
 

@@ -1,6 +1,6 @@
 Update brand colors, typography, and style - automatically syncs to all design system files.
 
-<args>$ARGUMENTS</args>
+Use the user request as the input. If the runtime supplies `$ARGUMENTS`, treat it as the same task input.
 
 ## Overview
 
@@ -13,7 +13,7 @@ This command systematically updates:
 
 ### Step 1: Gather Brand Input
 
-Use `AskUserQuestion` to collect:
+Use the runtime's user-question tool, or ask in chat, to collect:
 
 **Theme Selection:**
 - Theme name (e.g., "Ocean Professional", "Electric Creative", "Forest Calm")
@@ -60,6 +60,10 @@ intentional:
 node scripts/sync-brand-to-tokens.cjs --force
 ```
 
+For separately installed skills, use `--generator` with the absolute path to
+`design-system`'s `scripts/generate-tokens.cjs`, resolved from the runtime skill
+catalog (see the brand skill's Brand Sync Workflow).
+
 This will:
 - Update `assets/design-tokens.json` with new color names and values
 - Regenerate `assets/design-tokens.css` with correct CSS variables
@@ -99,15 +103,10 @@ Output summary:
 
 ## Examples
 
-```bash
-# Interactive mode
-/brand:update
-
-# With theme hint
-/brand:update "Ocean Professional"
-
-# Quick preset
-/brand:update "midnight purple"
+```text
+Use the brand skill to update the brand guidelines.
+Use the brand skill to update the theme to "Ocean Professional".
+Use the brand skill to apply the "midnight purple" preset.
 ```
 
 ## Color Presets

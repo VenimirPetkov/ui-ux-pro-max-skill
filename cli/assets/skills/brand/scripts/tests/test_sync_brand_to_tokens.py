@@ -24,12 +24,12 @@ TOKENS_STARTER = (
 )
 
 
-def _run(tmp_path: Path, *args: str) -> subprocess.CompletedProcess:
+def _run(tmp_path: Path, *args: str, script: Path = SCRIPT) -> subprocess.CompletedProcess:
     node = shutil.which("node")
     if not node:
         pytest.skip("node not available")
     return subprocess.run(
-        [node, str(SCRIPT), *args],
+        [node, str(script), *args],
         cwd=tmp_path,
         capture_output=True,
         text=True,
@@ -366,3 +366,41 @@ def test_discovered_css_without_tokens_does_not_block_sync(tmp_path):
 
     assert result.returncode == 0, result.stderr + result.stdout
     assert (tmp_path / "assets" / "design-tokens.json").exists()
+
+
+def test_sync_with_separately_installed_generator(tmp_path):
+    """Imported packages need not share a parent or retain their source name."""
+    brand_dir = tmp_path / "installed packages" / "brand-snapshot-123" / "scripts"
+    generator_dir = tmp_path / "other store" / "tokens-snapshot-456" / "scripts"
+    project = tmp_path / "project with spaces"
+    brand_dir.mkdir(parents=True)
+    generator_dir.mkdir(parents=True)
+    (project / "docs").mkdir(parents=True)
+    installed_script = brand_dir / SCRIPT.name
+    installed_generator = generator_dir / "generate-tokens.cjs"
+    shutil.copy(SCRIPT, installed_script)
+    shutil.copy(SCRIPTS.parent.parent / "design-system" / "scripts" / installed_generator.name,
+                installed_generator)
+    shutil.copy(BRAND_STARTER, project / "docs" / "brand-guidelines.md")
+
+    result = _run(project, "--generator", str(installed_generator), script=installed_script)
+
+    assert result.returncode == 0, result.stderr + result.stdout
+    tokens = json.loads((project / "assets" / "design-tokens.json").read_text())
+    assert tokens["primitive"]["color"]["primary"]["500"]["$value"] == "#2563EB"
+    css = (project / "assets" / "design-tokens.css").read_text()
+    assert "--primitive-color-primary-500" in css
+    assert "#2563EB" in css
+    assert not (brand_dir.parent / "assets").exists()
+    assert not (generator_dir.parent / "assets").exists()
+
+
+@pytest.mark.parametrize("generator_args", [[], ["missing.cjs"], ["docs"], ["--force"]])
+def test_invalid_generator_leaves_project_unchanged(tmp_path, generator_args):
+    (tmp_path / "docs").mkdir()
+    shutil.copy(BRAND_STARTER, tmp_path / "docs" / "brand-guidelines.md")
+
+    result = _run(tmp_path, "--generator", *generator_args)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert not (tmp_path / "assets").exists()
