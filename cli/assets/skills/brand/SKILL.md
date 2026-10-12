@@ -22,7 +22,9 @@ Brand identity, voice, messaging, asset management, and consistency frameworks.
 
 ## Script Paths
 
-Script paths in this skill and its `references/` are relative to the directory that contains this SKILL.md, not to the project: `scripts/<file>` is this skill's own `scripts/` folder, and `../<skill>/scripts/<file>` is a sibling sub-skill installed alongside it. Build the full path from that directory (Claude Code reports it as the skill's base directory when the skill loads) and keep the working directory at the project root — the scripts read and write project files such as `docs/brand-guidelines.md`, `assets/design-tokens.json` or `src/` relative to it.
+Paths in this skill and its references are relative to the directory containing the loaded `SKILL.md`. Resolve local `scripts/`, `references/`, and `templates/` paths from that directory, using the skill location supplied by the runtime. Invoke scripts with quoted absolute paths while keeping the working directory at the project root; project inputs and outputs such as `docs/brand-guidelines.md`, `assets/design-tokens.json`, and `src/` remain project-relative.
+
+A command written as `../<skill>/scripts/<file>` refers to another skill. Use the adjacent folder when it exists; otherwise resolve that skill by name through the runtime's available skill catalog and use its actual script path. Separately imported skills may live in unrelated directories. If a required skill or tool is unavailable, report the missing dependency instead of guessing a path.
 
 ## Quick Start
 
@@ -46,7 +48,7 @@ node scripts/extract-colors.cjs <image-path>
 ## Brand Sync Workflow
 
 ```bash
-# 1. Edit docs/brand-guidelines.md (or use /brand update)
+# 1. Edit docs/brand-guidelines.md (or ask the brand skill to update it)
 # 2. Sync to design tokens
 node scripts/sync-brand-to-tokens.cjs
 # 3. Verify
@@ -59,6 +61,16 @@ CSS imports, or Tailwind theme colors and presets. Review the reported source
 before proceeding. If the detected files are the managed
 `assets/design-tokens.*` outputs from an earlier sync and replacing them is
 intentional, re-run with `--force`.
+
+When `brand` and `design-system` are installed separately, resolve
+`design-system` from the runtime's skill catalog and pass the absolute path to
+its `scripts/generate-tokens.cjs` with `--generator`:
+
+```bash
+node scripts/sync-brand-to-tokens.cjs --generator "<absolute-path-to-generate-tokens.cjs>"
+```
+
+The adjacent `design-system` folder remains the default for a bundled install.
 
 **Files synced:**
 - `docs/brand-guidelines.md` → Source of truth
@@ -103,6 +115,6 @@ intentional, re-run with `--force`.
 
 ## Routing
 
-1. Parse subcommand from `$ARGUMENTS` (first word)
-2. Load corresponding `references/{subcommand}.md`
-3. Execute with remaining arguments
+1. Determine the requested operation from the user request. Use `$ARGUMENTS` only if the runtime supplies it; otherwise use the task text directly.
+2. Load the corresponding reference listed in Subcommands.
+3. Execute with the supplied context; ask only for missing information needed for the task.

@@ -8,6 +8,7 @@
  *   node sync-brand-to-tokens.cjs
  *   node sync-brand-to-tokens.cjs --dry-run
  *   node sync-brand-to-tokens.cjs --force
+ *   node sync-brand-to-tokens.cjs --generator /absolute/path/to/generate-tokens.cjs
  */
 
 const fs = require('fs');
@@ -57,9 +58,7 @@ const TAILWIND_CONFIGS = [
   'tailwind.config.mjs',
   'tailwind.config.ts'
 ];
-// Sibling sub-skill, resolved from this file's location so it works in every
-// install context (plugin cache, project or --global CLI install), not only
-// when the process runs from a project root that contains .claude/skills/.
+// Default for bundled installs; --generator supports independently located skills.
 const GENERATE_TOKENS_SCRIPT = path.resolve(__dirname, '..', '..', 'design-system', 'scripts', 'generate-tokens.cjs');
 
 /**
@@ -339,6 +338,20 @@ function main() {
   const dryRun = process.argv.includes('--dry-run');
   const force = process.argv.includes('--force');
   const projectRoot = process.cwd();
+  const generatorIndex = process.argv.indexOf('--generator');
+  const generatorArgument = generatorIndex < 0 ? null : process.argv[generatorIndex + 1];
+  let generateScript = GENERATE_TOKENS_SCRIPT;
+  if (generatorIndex >= 0) {
+    if (!generatorArgument || generatorArgument.startsWith('--')) {
+      console.error('❌ --generator requires a path to generate-tokens.cjs');
+      process.exit(1);
+    }
+    generateScript = path.resolve(projectRoot, generatorArgument);
+    if (!fs.existsSync(generateScript) || !fs.statSync(generateScript).isFile()) {
+      console.error(`❌ Generator script not found: ${generateScript}`);
+      process.exit(1);
+    }
+  }
 
   console.log('🔄 Syncing brand guidelines → design tokens\n');
 
@@ -394,10 +407,9 @@ function main() {
   console.log(`✅ Updated: ${DESIGN_TOKENS_JSON}`);
 
   // Regenerate CSS
-  const generateScript = GENERATE_TOKENS_SCRIPT;
   if (fs.existsSync(generateScript)) {
     try {
-      execFileSync('node', [generateScript, '--config', DESIGN_TOKENS_JSON, '-o', DESIGN_TOKENS_CSS], {
+      execFileSync(process.execPath, [generateScript, '--config', DESIGN_TOKENS_JSON, '-o', DESIGN_TOKENS_CSS], {
         cwd: process.cwd(),
         stdio: 'inherit'
       });

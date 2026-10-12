@@ -55,7 +55,9 @@ Use when:
 
 ## Script Paths
 
-Script paths in this skill and its `references/` are relative to the directory that contains this SKILL.md, not to the project: `scripts/<file>` is this skill's own `scripts/` folder, and `../<skill>/scripts/<file>` is a sibling sub-skill installed alongside it. Build the full path from that directory (Claude Code reports it as the skill's base directory when the skill loads) and keep the working directory at the project root — the scripts read and write project files such as `docs/brand-guidelines.md`, `assets/design-tokens.json` or `src/` relative to it.
+Paths in this skill and its references are relative to the directory containing the loaded `SKILL.md`. Resolve local `scripts/`, `references/`, and `templates/` paths from that directory, using the skill location supplied by the runtime. Invoke scripts with quoted absolute paths while keeping the working directory at the project root; project inputs and outputs such as `docs/brand-guidelines.md`, `assets/design-tokens.json`, and `src/` remain project-relative.
+
+A command written as `../<skill>/scripts/<file>` refers to another skill. Use the adjacent folder when it exists; otherwise resolve that skill by name through the runtime's available skill catalog and use its actual script path. Separately imported skills may live in unrelated directories. If a required skill or tool is unavailable, report the missing dependency instead of guessing a path.
 
 ## Quick Start
 
